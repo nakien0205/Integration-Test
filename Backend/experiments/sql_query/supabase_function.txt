@@ -1,0 +1,53 @@
+CREATE OR REPLACE FUNCTION search_products(
+    title_search TEXT,
+    brands_filter TEXT[],
+    max_price NUMERIC,
+    desc_includes TEXT[],
+    desc_excludes TEXT[]
+)
+RETURNS SETOF data -- Use your table's name here
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    query_str TEXT;
+    include_clause TEXT;
+    exclude_clause TEXT;
+BEGIN
+    -- Base query
+    query_str := 'SELECT * FROM data WHERE 1=1';
+
+    -- Add filters only if parameters are provided
+    IF title_search IS NOT NULL THEN
+        query_str := query_str || format(' AND title ILIKE %L', '%' || title_search || '%');
+    END IF;
+
+    IF brands_filter IS NOT NULL AND array_length(brands_filter, 1) > 0 THEN
+        query_str := query_str || format(' AND brand = ANY(%L)', brands_filter);
+    END IF;
+
+    IF max_price IS NOT NULL THEN
+        query_str := query_str || format(' AND final_price <= %L', max_price);
+    END IF;
+
+    -- Correctly build OR conditions for description includes
+    IF desc_includes IS NOT NULL AND array_length(desc_includes, 1) > 0 THEN
+        SELECT string_agg(format('description ILIKE %L', '%' || item || '%'), ' OR ')
+        INTO include_clause
+        FROM unnest(desc_includes) AS item;
+        query_str := query_str || ' AND (' || include_clause || ')';
+    END IF;
+
+    -- Correctly build AND conditions for description excludes
+    IF desc_excludes IS NOT NULL AND array_length(desc_excludes, 1) > 0 THEN
+        SELECT string_agg(format('description NOT ILIKE %L', '%' || item || '%'), ' AND ')
+        INTO exclude_clause
+        FROM unnest(desc_excludes) AS item;
+        query_str := query_str || ' AND (' || exclude_clause || ')';
+    END IF;
+
+    -- Add final ordering and limit
+    query_str := query_str || ' ORDER BY final_price ASC LIMIT 10';
+
+    RETURN QUERY EXECUTE query_str;
+END;
+$$;

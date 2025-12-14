@@ -1,0 +1,8 @@
+openai
+dotenv
+ddgs
+pandas
+supabase
+crawl4ai
+uvicorn
+fastapi

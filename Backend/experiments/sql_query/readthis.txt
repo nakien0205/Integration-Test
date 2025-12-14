@@ -1,0 +1,1 @@
+Do not use base_query.py, this was created as a fail safe to fall back if the function write in supabase_function.txt is deleted or some shit

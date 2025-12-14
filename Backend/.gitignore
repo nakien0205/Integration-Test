@@ -1,0 +1,11 @@
+.vercel
+.idea/
+# Ignore environment files containing secrets
+*.env
+.env
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+api.txt
